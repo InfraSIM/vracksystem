@@ -1,0 +1,37 @@
+'''
+*********************************************************
+Copyright @ 2015 EMC Corporation All Rights Reserved
+*********************************************************
+'''
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
+import getopt, sys, json
+import esxi_backend
+
+def usage():
+    print("Usage: %s -u <username> -p <password> -h <host>" % sys.argv[0]);
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(1)
+
+    api_host_keys = {"user":"", "password":"", "host":""}
+    opts, args = getopt.getopt(sys.argv[1:], "u:p:h:", ["help"])
+    for opt, arg in opts:
+        if opt in ("-u"):
+            api_host_keys["user"] = arg
+        elif opt in ("-p"):
+            api_host_keys["password"] = arg
+        elif opt in ("-h"):
+            api_host_keys["host"] = arg
+        elif opt in ("--help"):
+            usage()
+            sys.exit(1)
+        else:
+            pass
+
+    esxi_backend.ESXIClient(api_host_keys).esxi_run()

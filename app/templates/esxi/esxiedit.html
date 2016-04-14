@@ -1,0 +1,56 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header"> Update ESXi </h1>
+    </div>
+    <div class="row" style="width: 50%">
+        <form action="update" class="crawl" method="post" id="EditESXi">
+            {% csrf_token %}
+            {{ form.username.errors }}
+            {{ form.password.errors }}
+            {{ message }}
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td>Host IP</td>
+                        <td>
+                             <input name="hostIP" type="text" class="form-control" value="{{ esxiIP }}" readonly="readonly">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>User Name</td>
+                        <td>
+                            {% if form %}
+                                {{ form.username }} *
+                            {% else %}
+                                <input name="username" type="text" class="form-control" value="{{ username}}">
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Password</td>
+                        <td>
+                            {% if form %}
+                                {{ form.password }} *
+                            {% else %}
+                                <input name="password" type="text" class="form-control" value="{{ password}}">
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button type="Submit" class="btn btn-default">Update</button>
+                            <button type="button" class="btn btn-default" onclick="window.location.href='../esxi'">Cancel</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

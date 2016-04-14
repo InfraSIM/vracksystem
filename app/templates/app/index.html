@@ -1,0 +1,96 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+        <!-- Page Content -->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-header">What can you do?</h1>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            Resource Management.
+                        </div>
+                        <div class="panel-body">
+                            <p>Evaluate Resources on ESXi, KVM or Docker. Provide resource reference when deploy vNode/vPDU on them. </p>
+                        </div>
+                        <div class="panel-footer">
+                            <a href="{% url 'esxi' %}"><i class="fa fa-location-arrow fa-fw"></i> Go </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            vNode Deployment
+                        </div>
+                        <div class="panel-body">
+                            <p>Get vNodes and PDU OVA files, deployed and control the virtual machine(Poweron/PowerOff/Reset/Delete)</p>
+                        </div>
+                        <div class="panel-footer">
+                            <a href="{% url 'vnodedeploy' %}"><i class="fa fa-location-arrow fa-fw"></i> Go </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            vPDU Setting
+                        </div>
+                        <div class="panel-body">
+                            <p>Support to restart PDU / set vPDU ESXi Host, password list, vnode mapping.</p>
+                        </div>
+                        <div class="panel-footer">
+                            <a href="{% url 'vpdubasic' %}"><i class="fa fa-location-arrow fa-fw"></i> Go </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            vNode Customization
+                        </div>
+                        <div class="panel-body">
+                            <p>Support to add drive and add NIC. More customization features will be supported later.</p>
+                        </div>
+                        <div class="panel-footer">
+                            <a href="{% url 'adddrive' %}"><i class="fa fa-location-arrow fa-fw"></i> Go </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            vRack Builder
+                        </div>
+                        <div class="panel-body">
+                            <p>Comming Soon...Deploy compute node and PDU intelligently on racks with their mappings. </p>
+                        </div>
+                        <div class="panel-footer">
+                            Go
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="panel panel-danger">
+                        <div class="panel-heading">
+                            Support
+                        </div>
+                        <div class="panel-body">
+                            <p>Please review the environment / project setup / How to use documentation.</p>
+                        </div>
+                        <div class="panel-footer">
+                            <a href="{% url 'support' %}"><i class="fa fa-location-arrow fa-fw"></i> Go </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+
+<!-- Page Content -->
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header"> ESXi Resource Management </h1>
+    </div>
+
+    <div class="row" style="width: 50%">
+        <table class="table table-striped table-bordered table-hover" id="esxiview">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">ESXi Host</th>
+                    <th style="width: 50%;">Manage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if esxiHosts %}
+                {% for host in esxiHosts %}
+                    <tr class="odd gradeX">
+                        <td><p>{{ host.esxiIP }}</p></td>
+                        <td>
+                            <a href="/esxi/update?esxiip={{host.esxiIP}}">Edit</a>
+                            <a href="/esxi/delete?esxiip={{host.esxiIP}}" onclick="return confirm('Are you sure to delete {{ host.esxiIP }}?')"> Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% endif %}
+
+                <tr class="even gradeC">
+                    <td></td>
+                    <td>
+                        <button type="Submit" class="btn btn-default" onclick="window.location.href='/esxi/add'">Add ESXi</button>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

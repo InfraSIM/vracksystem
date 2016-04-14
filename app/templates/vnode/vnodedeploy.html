@@ -1,0 +1,248 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">vNode/vPDU Deploy</h1>
+    </div>
+    <div class="row" style="width: 60%">
+        <div id="progressbar" name="progressbar" style='display:none' align="center">
+            <img src='../../static/app/img/progressbar.gif'/>
+            <p id="progresstext" name="progresstext"></p>
+        </div>
+        <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token }}" >
+        <form action="deploy" class="crawl" method="POST" id="DeployNodeForm">
+            {% csrf_token %}
+            {{ form.duration.errors }}
+            {{ form.nodeCount.errors }}
+            <p style="color: #e38d13">{{ message }}</p>
+            <table class="table table-striped table-bordered table-hover" id="NodeDeployTable">
+                <tbody>
+                    <tr>
+                        <td style="width: 30%">ESXi</td>
+                        <td style="width: 70%">
+                            <select id="esxihost" name="esxihost" class="form-control">
+                                <option selected value="0">Please Select...</option>
+                                {% if esxihosts %}
+                                {% for esxihost in esxihosts %}
+                                    <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Datastore</td>
+                        <td>
+                            <select id="datastore" name="datastore" class="form-control" onchange="selectDatastore.value = this.options[this.selectedIndex].value">
+                                <option value="0">Please Select...</option>
+                            </select>
+                            <input type="hidden" name="selectDatastore" id="selectDatastore" value="0">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Power Type</td>
+                        <td>
+                            <select name="powertype" class="form-control" onchange="selectedPowertype.value = this.options[this.selectedIndex].value">
+                                <option value="on">on</option>
+                                <option value="off">off</option>
+                            </select>
+                            <input type="hidden" name="selectedPowertype" id="selectedPowertype" value="on">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Duration</td>
+                        <td>
+                            {{ form.duration }} *
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Node Type</td>
+                        <td>
+                            <select id="nodetype" name="nodetype" class="form-control" onchange="selectedNodetype.value = this.options[this.selectedIndex].value">
+                                <option value="0">Please Select...</option>
+                                <option value="node">vNode</option>
+                                <option value="pdu">vPDU</option>
+                            </select>
+                            <input type="hidden" name="selectedNodetype" id="selectedNodetype" value="0">
+                        </td>
+                    </tr>
+                    <tr id="controlNetworkTable" style='display:none'>
+                        <td>Control Network</td>
+                        <td>
+                            <select id="controlnetwork" name="controlnetwork" class="form-control" onchange="selectControlNetwork.value = this.options[this.selectedIndex].value">
+                                <option value="0">Please Select...</option>
+                            </select>
+                            <input type="hidden" name="selectControlNetwork" id="selectControlNetwork" value="VM Network 2">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>vNode Image</td>
+                        <td>
+                            <select id="vnodeimage" name="vnodeimage" class="form-control" onchange="selectedNodeImage.value = this.options[this.selectedIndex].value">
+                                <option selected value="0">Please Select...</option>
+                            </select>
+                            <input type="hidden" name="selectedNodeImage" id="selectedNodeImage" value="0">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Node Count</td>
+                        <td>
+                            {{ form.nodeCount }} *
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><button id="deploybutton" name="deploybutton" type="button" class="btn btn-default">Deploy</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/datastores',
+        dataType: 'json',
+        success: function (output) {
+            if(output.indexOf("Failed") >= 0){
+                alert("Fail to get the datastore information. Please check your ESXi host information!");
+            }
+            else{
+                var parsed = JSON.parse(output);
+                var $datastore = $('#datastore').empty();
+                $datastore.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function(index, value) {
+                    var $html = '<option value="' + value + '">' + value + '</option>'
+                    $('#datastore').append($html)
+                })
+            }
+        },
+        error: function(){
+            alert("Fail to get the datastore information. Please consult system admin for the permission.");
+        }
+    });
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/networks',
+        dataType: 'json',
+        success: function (output) {
+            if(output.indexOf("Failed") >= 0){
+                alert("Fail to get the network information. Please check your ESXi host information!");
+            }
+            else{
+                var parsed = JSON.parse(output);
+                var $controlnetwork = $('#controlnetwork').empty();
+                $controlnetwork.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function(index, value) {
+                    var $html = '<option value="' + value + '">' + value + '</option>'
+                    $('#controlnetwork').append($html)
+                })
+            }
+        },
+        error: function(){
+            alert("Fail to get the network information. Please consult system admin for the permission.");
+        }
+    });
+})
+
+$('#nodetype').change(function() {
+    var vnodetype = $('#nodetype').val()
+
+    if(vnodetype=="node")
+    {
+        $('#controlNetworkTable').show();
+    }
+    else
+    {
+        $('#controlNetworkTable').hide();
+    }
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/ova/list',
+        data: {'csrfmiddlewaretoken': '{{csrf_token}}', "type": vnodetype},
+        success: function (output) {
+            var parsed = JSON.parse(output);
+            if(parsed.length == 0){
+                alert("There's no " + vnodetype + " OVA images. Please get OVA files firstly.");
+                window.location.href="../vnode/uploadova"
+            }
+            else{
+                var $vnodeimage = $('#vnodeimage').empty();
+                $vnodeimage.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function (index, value) {
+                    var ova_type = value.split("_")[0];
+                    var ova = value;
+                    if(ova_type == "node"){
+                        ova = value.substr(5);
+                    }
+                    else if(ova_type == "pdu"){
+                        ova = value.substr(4);
+                    }
+                    else{
+                        ova = value;
+                    }
+
+                    var $html = '<option value="' + value + '">'+ ova +'</option>'
+                    $('#vnodeimage').append($html)
+                });
+            }
+        },
+        error: function(){
+            alert("Fail to get the OVA images on the server. Please consult system admin for the permission.")
+        },
+        dataType: 'json'
+    });
+})
+
+$('#deploybutton').click(function() {
+    var count = $('#id_nodeCount').val();
+    var duration = $('#id_duration').val();
+    var id = $('#esxihost').val();
+    var datastore = $('#selectDatastore').val();
+    var controlnet = $('#selectControlNetwork').val();
+    var power = $('#selectedPowertype').val();
+    var type = $('#selectedNodetype').val();
+    var ova = $('#selectedNodeImage').val();
+    var token = $('#csrf_token').val();
+
+    if(id=="0" || datastore=="0" || type=="0" || ova=="0"){
+        alert("Please input all the information and try again...")
+    }
+    else{
+        data={};
+        if (ova == "0"){
+            data = {'csrfmiddlewaretoken': token, "id": id, "datastore": datastore, "power": power, "duration": duration, "controlnetwork": controlnet, "nodetype": type, "count": count};
+        }
+        else{
+            data = {'csrfmiddlewaretoken': token, "id": id, "datastore": datastore, "power": power, "duration": duration, "controlnetwork": controlnet, "nodetype": type, "count": count, "ova": ova};
+        }
+        $('#progressbar').show();
+        $.ajax({
+            type: 'POST',
+            url: '../api/v1/esxi/'+ id +'/deploy',
+            data: data,
+            async: false,
+            dataType: 'json',
+            success: function() {
+                $('#progresstext').text(count + " " + type+  " deploy successfully!");
+                $('#progressbar').hide();
+            },
+            error: function(){
+                $('#progresstext').text(count + " " + type+  " fail to deploy successfully!");
+                $('#progressbar').hide();
+            }
+        });
+    }
+})
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>vRackSystem</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="../../static/theme/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- MetisMenu CSS -->
+    <link href="../../static/theme/bower_components/metisMenu/dist/metisMenu.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="../../static/theme/dist/css/sb-admin-2.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="../../static/theme/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="../../static/theme/js/html5shiv.js"></script>
+        <script src="../../static/theme/js/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        .centered {
+            position: fixed;
+            top: 30%;
+            left: 45%;
+            margin-top: -50px;
+            margin-left: -100px;
+            width: 400px;
+            height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+{#<h2>vRackSystem</h2>#}
+
+    <div id="wrapper">
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{% url 'home' %}">vRackSystem</a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <section id="loginForm">
+                        <form action="." method="post" class="form-horizontal">
+                            {% csrf_token %}
+
+                            <div class="centered">
+                            <h4 align="center" style="font-size: xx-large">Welcome to vRackSystem!</h4>
+                            <hr />
+                            <div class="form-group" align="center">
+                                <label for="id_username" class="col-md-2 control-label">Username</label>
+                                <div class="col-md-10">
+                                    {{ form.username }}
+                                </div>
+                            </div>
+                            <div class="form-group" align="center">
+                                <label for="id_password" class="col-md-2 control-label">Password</label>
+                                <div class="col-md-10">
+                                    {{ form.password }}
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-offset-2 col-md-10">
+                                    <input type="hidden" name="next" value="/" />
+                                    <input type="submit" value="Log in" class="btn btn-default"/><a href="mailto:yuki.wu@emc.com;mark.ma@emc.com;?Subject=vRackSystem%20Cannot%20Access&cc=bryan.fu@emc.com;">Cannot access?</a>
+                                </div>
+                            </div>
+                            {% if form.errors %}
+                            <p class="validation-summary-errors" style="color: firebrick">Please enter a correct user name and password.</p>
+                            {% endif %}
+                            </div>
+                        </form>
+                    </section>
+                </div>
+                <div class="col-md-4">
+                    <section id="socialLoginForm"></section>
+                </div>
+            </div>
+
+        </nav>
+    </div>
+
+
+{% block scripts %}
+
+{% load staticfiles %}
+<script src="{% static 'app/scripts/jquery.validate.min.js' %}"></script>
+
+{% endblock %}
+
+</body>
+</html>

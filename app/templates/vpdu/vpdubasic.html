@@ -1,0 +1,148 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">vPDU Information</h1>
+    </div>
+    <div class="row" id="ChoosePanel" name="ChoosePanel">
+        <div class="left">
+            <table>
+                <tr>
+                    <td>ESXi Host</td>
+                    <td>
+                        <select id="esxihost" name="esxihost" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                            {% if esxihosts %}
+                            {% for esxihost in esxihosts %}
+                                <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </td>
+                    <td>PDU</td>
+                    <td>
+                        <select id="pdu" name="pdu" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <input id="esxihostid" name="esxihostid" type="hidden" value="" >
+        <input id="selectpduip" name="selectpduip" type="hidden" value="" >
+
+        <p id="message" name="message">Select an ESXi host to get the PDU on it.</p>
+
+    </div>
+
+    <div class="row" style="width: 50%; display: none;" id="pdubasicinfo" name="pdubasicinfo">
+        <br/>
+        <table class="table table-striped table-bordered table-hover">
+            <tr>
+                <td style="width: 30%">PDU Name</td>
+                <td style="width: 70%"><p id="PDUName" name="PDUName"></p></td>
+            </tr>
+            <tr>
+                <td style="width: 30%">PDU IP</td>
+                <td style="width: 70%"><p id="PDUIP" name="PDUIP"></p></td>
+            </tr>
+            <tr>
+                <td style="width: 30%">PDU Power</td>
+                <td style="width: 70%"><p id="PDUStatus" name="PDUStatus"></p></td>
+            </tr>
+            <tr>
+                <td style="width: 30%"></td>
+                <td style="width: 70%"><button type="button" class="btn btn-default" id="RestartPDU" name="RestartPDU">Restart PDU</button></td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $('#message').text("Please Select an PDU...");
+
+    $('#pdubasicinfo').hide();
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        success: function (output) {
+            var parsed = JSON.parse(output);
+            var $pdu = $('#pdu').empty();
+            $pdu.append('<option selected value="0">Please Select...</option>')
+            var check = true;
+            $.each(parsed, function(index, value) {
+                var nodename = value["name"];
+                if(nodename.indexOf("pdu")>=0)
+                {
+                    $('#message').text("Please Select an PDU...");
+                    var $html = '<option value="' + value["name"] + "/" + value["ip"] + "/" +value["status"] + '">' + value["name"] + '</option>'
+                    $('#pdu').append($html)
+                    check = false;
+                }
+            })
+
+            if(check)
+            {
+                alert("There is no PDU on the ESXi host. Please deploy PDU first.")
+            }
+        },
+        error: function(){
+            alert("Fail to get the PDU information.");
+        }
+    });
+})
+
+$('#pdu').change(function() {
+    var pdu = $('#pdu').val()
+    var pduname = pdu.split("/")[0]
+    var pduip = pdu.split("/")[1]
+    var pdupower = pdu.split("/")[2]
+
+    if(pdu=="0"){
+        $('#message').show();
+        $('#message').text("Please Select an PDU...");
+        $('#pdubasicinfo').hide();
+    }
+    else{
+        $('#message').hide();
+        $('#pdubasicinfo').show();
+        $('#selectpduip').val(pduip);
+        $('#PDUName').text(pduname);
+        $('#PDUIP').text(pduip);
+        $('#PDUStatus').text(pdupower);
+    }
+})
+
+$('#RestartPDU').click(function() {
+    var esxi = $('#esxihost').val();
+    var pduip = $('#selectpduip').val();
+
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+esxi+'/vpdurestart',
+        async: false ,
+        data: {'csrfmiddlewaretoken': "{{ csrf_token }}", "id": esxi, "ip": pduip},
+        dataType: 'json',
+        success: function (output) {
+            $('#restartprogressbar').hide();
+            alert(output);
+        },
+        error: function(output){
+            $('#restartprogressbar').hide();
+            alert(output);
+        }
+    });
+})
+
+</script>
+
+{% endblock %}

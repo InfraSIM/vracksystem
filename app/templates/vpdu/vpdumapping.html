@@ -1,0 +1,413 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">vPDU Node Mapping</h1>
+    </div>
+    <div class="row" id="ChoosePanel" name="ChoosePanel">
+        <div class="left">
+            <table>
+                <tr>
+                    <td>ESXi Host</td>
+                    <td>
+                        <select id="esxihost" name="esxihost" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                            {% if esxihosts %}
+                            {% for esxihost in esxihosts %}
+                                <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </td>
+                    <td>PDU</td>
+                    <td>
+                        <select id="pdu" name="pdu" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <input id="esxihostid" name="esxihostid" type="hidden" value="" >
+        <input id="selectpduip" name="selectpduip" type="hidden" value="" >
+        <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token }}" >
+
+        <p id="message" name="message">Select an ESXi host to get the PDU on it.</p>
+    </div>
+
+    <div id='progressbar' style='display:none' align="left">
+        <img src='../../static/app/img/progressbar.gif'/>
+    </div>
+
+    <div class="row" style="width: 60%; display: none;" id="pdunodemappinglist" name="pdunodemappinglist">
+        <br/>
+        <table class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 10%"  align="left">PDU #</th>
+                    <th style="width: 10%"  align="left">PDU Port</th>
+                    <th style="width: 30%"  align="left">Node Name</th>
+                    <th style="width: 30%"  align="left">Node Datastore</th>
+                    <th style="width: 20%"  align="left">Control</th>
+                </tr>
+            </thead>
+            <tbody id="pdunodemappingtable" name="pdunodemappingtable">
+            </tbody>
+            <tr>
+                <td style="width: 10%"  align="left"></td>
+                <td style="width: 15%"  align="center" colspan="5">
+                    <button type="button" class="btn btn-default" id="AddNodeMapping" name="AddNodeMapping">Add</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row" style="width: 50%; display: none;" id="addnodemappingtable" name="addnodemappingtable">
+        <br/>
+        <table class="table table-striped table-bordered table-hover">
+            <tr>
+                <td>Node Datastore</td>
+                <td>
+                    <select id="datastore" name="datastore" class="form-control" onchange="nodedatastore.value = this.options[this.selectedIndex].value">
+                        <option value="0">Please Select...</option>
+                    </select>
+                    <input type="hidden" name="nodedatastore" id="nodedatastore" value="0">
+                </td>
+            </tr>
+            <tr>
+                <td>Node Name</td>
+                <td>
+                    <select id="vmname" name="vmname" class="form-control" onchange="nodename.value = this.options[this.selectedIndex].value">
+                        <option value="0">Please Select...</option>
+                    </select>
+                    <input type="hidden" name="nodename" id="nodename" value="0">
+                </td>
+            </tr>
+            <tr>
+                <td>PDU Number</td>
+                <td>
+                    <input id="pdunumber" name="pdunumber" value="" />PDU Number
+                </td>
+            </tr>
+            <tr>
+                <td>PDU Port</td>
+                <td>
+                    <input id="pduport" name="pduport" value="" />PDU Port
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <button type="button" class="btn btn-default" id="ExecuteAddNodeMapping" name="ExecuteAddNodeMapping" style="display: none;">Add</button>
+                    <button type="button" class="btn btn-default" id="ExecuteUpdateNodeMapping" name="ExecuteUpdateNodeMapping" style="display: none;">Update</button>
+                    <button type="button" class="btn btn-default" id="CancelAddNodeMapping" name="CancelAddNodeMapping">Cancel</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $('#selectpduip').val(esxi);
+    var token = $('#csrf_token').val();
+
+    $('#message').text("Please Select an PDU...");
+    $('#pdunodemappinglist').hide();
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        data: {'csrfmiddlewaretoken': token},
+        success: function (output) {
+            var parsed = JSON.parse(output);
+            var $pdu = $('#pdu').empty();
+            $pdu.append('<option selected value="0">Please Select...</option>')
+            var check = true;
+            $.each(parsed, function(index, value) {
+                var nodename = value["name"];
+                if(nodename.indexOf("pdu")>=0)
+                {
+                    $('#message').text("Please Select an PDU...");
+                    var $html = '<option value="' + value["name"] + "/" + value["ip"] + "/" +value["status"] + '">' + value["name"] + '</option>'
+                    $('#pdu').append($html)
+                    check = false;
+                }
+            })
+
+            if(check)
+            {
+                alert("There is no PDU on the ESXi host. Please deploy PDU first.")
+            }
+        },
+        error: function(){
+            alert("Fail to get the PDU information.");
+        }
+    });
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/datastores',
+        dataType: 'json',
+        data: {'csrfmiddlewaretoken': token},
+        success: function (output) {
+            if(output.indexOf("Failed") >= 0){
+                alert("Fail to get the datastore information. Please check your ESXi host information!");
+            }
+            else{
+                var parsed = JSON.parse(output);
+                var $datastore = $('#datastore').empty();
+                $datastore.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function(index, value) {
+                    var $html = '<option value="' + value + '">' + value + '</option>'
+                    $('#datastore').append($html)
+                })
+            }
+        },
+        error: function(){
+            alert("Fail to get the datastore information. Please consult system admin for the permission.");
+        }
+    });
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        data: {'csrfmiddlewaretoken': token},
+        success: function (output) {
+            if(output.indexOf("Failed") >= 0){
+                var $vmname = $('#vmname').empty();
+                $vmname.append('<option selected value="0">Please Select...</option>')
+                alert("Fail to get the vms information. Please check your ESXi host information!");
+            }
+            else{
+                var parsed = JSON.parse(output);
+                var $vmname = $('#vmname').empty();
+                $vmname.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function(index, value) {
+                    var $html = '<option value="' + value["name"] + '">' + value["name"] + '</option>'
+                    $('#vmname').append($html)
+                })
+            }
+        },
+        error: function(){
+            alert("Fail to get the vms information. Please consult system admin for the permission.");
+        }
+    });
+})
+
+$('#pdu').change(function() {
+    var esxi = $('#esxihost').val()
+    var pdu = $('#pdu').val()
+    var pduip = pdu.split("/")[1]
+    $('#addnodemappingtable').hide();
+    $('#pdunodemappingtable').empty();
+
+    var token = $('#csrf_token').val();
+
+   if(pdu=="0"){
+        $('#message').show();
+        $('#message').text("Please Select an PDU...");
+        $('#pdupasswordlist').hide();
+    }
+   else{
+        $('#pdupasswordlist').show();
+        $('#message').hide();
+
+        if(pduip=="")
+        {
+            alert("PDU IP is empty, please power on your PDU!")
+        }
+        else {
+            if (pduip.indexOf(",") >= 0) {
+                pduip = pduip.split(",")[1];
+            }
+            $('#selectpduip').val(pduip);
+            $('#pdunodemappinglist').show();
+            $('#message').hide();
+            $('#selectpduip').val(pduip);
+
+            $.ajax({
+                type: 'POST',
+                url: '../api/v1/esxi/' + esxi + '/vpdumaplist',
+                async: false,
+                data: {'csrfmiddlewaretoken': token, "id": esxi, "ip": pduip},
+                dataType: 'json',
+                success: function (output) {
+                    var parsed = JSON.parse(output);
+                    $.each(parsed, function (index2, value2) {
+                        var td0 = document.createElement('td');
+                        td0.innerHTML = value2[0];
+                        var td1 = document.createElement('td');
+                        td1.innerHTML = value2[1];
+                        var td2 = document.createElement('td');
+                        td2.innerHTML = value2[2];
+                        var td3 = document.createElement('td');
+                        td3.innerHTML = value2[3];
+
+                        var updatebutton = document.createElement("input");
+                        updatebutton.setAttribute("type", "button");
+                        updatebutton.setAttribute("id", "updatebutton");
+                        updatebutton.setAttribute("name", "updatebutton");
+                        updatebutton.setAttribute("value", "Update");
+                        updatebutton.setAttribute("onclick", "UpdateButtonClick('" + value2 + "')");
+
+                        var deletebutton = document.createElement("input");
+                        deletebutton.setAttribute("type", "button");
+                        deletebutton.setAttribute("id", "deletebutton");
+                        deletebutton.setAttribute("name", "deletebutton");
+                        deletebutton.setAttribute("value", "Delete");
+                        deletebutton.setAttribute("onclick", "DeleteButtonClick('" + value2 + "')");
+
+                        var td4 = document.createElement('td');
+
+                        td4.appendChild(updatebutton);
+                        td4.appendChild(deletebutton);
+
+                        var tr = document.createElement('tr');
+                        tr.appendChild(td0);
+                        tr.appendChild(td1);
+                        tr.appendChild(td2);
+                        tr.appendChild(td3);
+                        tr.appendChild(td4);
+
+                        $('#pdunodemappingtable').append(tr);
+                    })
+                },
+                error: function () {
+                    alert("Fail to get the vPDU Node Mapping list.");
+                }
+            });
+        }
+    }
+})
+
+$('#AddNodeMapping').click(function() {
+    $('#pdunodemappinglist').hide();
+    $('#addnodemappingtable').show();
+    $('#ExecuteAddNodeMapping').show();
+    $('#ExecuteUpdateNodeMapping').hide();
+    $('#message').hide();
+})
+
+$('#ExecuteAddNodeMapping').click(function() {
+    $('#pdupasswordlist').hide();
+    $('#message').hide();
+    $('#addpdupassword').show();
+    $('#progressbar').show();
+
+    var esxi = $('#esxihost').val();
+    var pduip = $('#selectpduip').val();
+    var datastore = $('#nodedatastore').val();
+    var nodename = $('#nodename').val();
+    var pdunumber = $('#pdunumber').val();
+    var pduport = $('#pduport').val();
+
+    var token = $('#csrf_token').val();
+
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+esxi+'/vpdumapadd',
+        async: false ,
+        data: {'csrfmiddlewaretoken': token, "id": esxi, "ip": pduip, "dt": datastore, "name": nodename, "pdu": pdunumber, "port": pduport},
+        dataType: 'json',
+        success: function (output) {
+            alert("Add node mapping for PDU: " + pdunumber + " Port: " + pduport + " successfully!");
+            $('#progressbar').hide();
+        },
+        error: function(output){
+            alert("Fail to add node mapping for PDU: " + pdunubmer + " Port: " + pduport + ". Please retry...");
+            $('#progressbar').hide();
+        }
+    });
+})
+
+$('#CancelAddNodeMapping').click(function() {
+    window.location.href = "mapping";
+})
+
+function UpdateButtonClick(value){
+    $('#pdunodemappinglist').hide();
+    $('#addnodemappingtable').show();
+    $('#ExecuteAddNodeMapping').hide();
+    $('#ExecuteUpdateNodeMapping').show();
+    $('#message').hide();
+
+    pdumap = value.split(",");
+    $('#pdunumber').val(pdumap[0]);
+    $('#pduport').val(pdumap[1]);
+    $('#vmname').val(pdumap[2]);
+    $('#datastore').val(pdumap[3]);
+    $('#nodename').val(pdumap[2]);
+    $('#nodedatastore').val(pdumap[3]);
+}
+
+$('#ExecuteUpdateNodeMapping').click(function() {
+    $('#pdupasswordlist').hide();
+    $('#message').hide();
+    $('#addpdupassword').show();
+    $('#progressbar').show();
+
+    var esxi = $('#esxihost').val();
+    var pduip = $('#selectpduip').val();
+    var datastore = $('#nodedatastore').val();
+    var nodename = $('#nodename').val();
+    var pdunumber = $('#pdunumber').val();
+    var pduport = $('#pduport').val();
+    var token = $('#csrf_token').val();
+
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+esxi+'/vpdumapupdate',
+        async: false ,
+        data: {'csrfmiddlewaretoken': token, "id": esxi, "ip": pduip, "dt": datastore, "name": nodename, "pdu": pdunumber, "port": pduport},
+        dataType: 'json',
+        success: function (output) {
+            alert("Update node mapping for node: " + nodename + " successfully!");
+            $('#progressbar').hide();
+        },
+        error: function(output){
+            alert("Fail to update node mapping for node: " + nodename + ". Please retry...");
+            $('#progressbar').hide();
+        }
+    });
+})
+
+function DeleteButtonClick(value){
+    $('#progressbar').show();
+    var esxi = $('#esxihost').val();
+    var pduip = $('#selectpduip').val();
+    var token = $('#csrf_token').val();
+    pdumap = value.split(",");
+    dt = pdumap[3];
+    name = pdumap[2];
+
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+esxi+'/vpdumapdelete',
+        async: false ,
+        data: {'csrfmiddlewaretoken': token, "id": esxi, "ip": pduip, "dt": dt, "name": name},
+        dataType: 'json',
+        success: function (output) {
+            alert("Delete node mapping for node: " + name + " successfully!");
+            $('#progressbar').hide();
+        },
+        error: function(output){
+            alert("Fail to delete node mapping for node: " + name + ". Please retry...");
+            $('#progressbar').hide();
+        }
+    });
+}
+
+</script>
+
+{% endblock %}

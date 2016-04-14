@@ -1,0 +1,260 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">vPDU ESXi Host</h1>
+    </div>
+    <div class="row" id="ChoosePanel" name="ChoosePanel">
+        <div class="left">
+            <table>
+                <tr>
+                    <td>ESXi Host</td>
+                    <td>
+                        <select id="esxihost" name="esxihost" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                            {% if esxihosts %}
+                            {% for esxihost in esxihosts %}
+                                <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </td>
+                    <td>PDU</td>
+                    <td>
+                        <select id="pdu" name="pdu" class="form-control" style="width: 200px">
+                            <option selected value="0">Please Select...</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <input id="esxihostid" name="esxihostid" type="hidden" value="" >
+        <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token }}" >
+        <input id="selectpduip" name="selectpduip" type="hidden" value="" >
+        <input id="bindingesxihost" name="bindingesxihost" type="hidden" value="" >
+
+        <p id="message" name="message">Select an ESXi host to get the PDU on it.</p>
+
+    </div>
+
+    <div id='progressbar' style='display:none' align="left">
+        <img src='../../static/app/img/progressbar.gif'/>
+    </div>
+
+    <div class="row" style="width: 30%; display: none;" id="pduesxihost" name="pduesxihost">
+        <br/>
+        <table class="table table-striped table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 80%" align="left">Binding ESXi Host</th>
+                </tr>
+            </thead>
+            <tbody id="pduesxihosttable" name="pduesxihosttable">
+            </tbody>
+            <tr>
+                <td style="width: 80%">
+                    <button type="button" class="btn btn-default" id="AddESXiHost" name="AddESXiHost" style="display: none;">Add</button>
+                    <button type="button" class="btn btn-default" id="DeleteESXiHost" name="DeleteESXiHost" style="display: none;">Delete</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="row" style="width: 50%; display: none;" id="addesxihosttable" name="addesxihosttable">
+        <br/>
+        <table class="table table-striped table-bordered table-hover">
+            <tr>
+                <td>ESXi</td>
+                <td>
+                    <select id="addesxihost" name="addesxihost" class="form-control" style="width: 200px">
+                        <option selected value="0">Please Select...</option>
+                        {% if esxihosts %}
+                        {% for esxihost in esxihosts %}
+                            <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>PDU IP</td>
+                <td>
+                    <input id="pduipaddress" name="pduipaddress" value="" />
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <button type="button" class="btn btn-default" id="ExecuteAddESXiHost" name="ExecuteAddESXiHost">Add</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $('#selectpduip').val(esxi);
+
+    $('#message').text("Please Select an PDU...");
+    $('#pduesxihost').hide();
+    $('#addesxihosttable').hide();
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        success: function (output) {
+            var parsed = JSON.parse(output);
+            var $pdu = $('#pdu').empty();
+            $pdu.append('<option selected value="0">Please Select...</option>')
+            var check = true;
+            $.each(parsed, function(index, value) {
+                var nodename = value["name"];
+                if(nodename.indexOf("pdu")>=0)
+                {
+                    $('#message').text("Please Select an PDU...");
+                    var $html = '<option value="' + value["name"] + "/" + value["ip"] + "/" +value["status"] + '">' + value["name"] + '</option>'
+                    $('#pdu').append($html)
+                    check = false;
+                }
+            })
+            if(check)
+            {
+                alert("There is no PDU on the ESXi host. Please deploy PDU first.")
+            }
+        },
+        error: function(){
+            alert("Fail to get the PDU information.");
+        }
+    });
+})
+
+$('#pdu').change(function() {
+    var esxi = $('#esxihost').val()
+    var pdu = $('#pdu').val()
+    var pduip = pdu.split("/")[1]
+    $('#addesxihosttable').hide();
+    $('#pduesxihosttable').empty();
+
+    if(pdu=="0"){
+        $('#message').show();
+        $('#message').text("Please Select an PDU...");
+        $('#pduesxihost').hide();
+    }
+    else{
+        $('#pduesxihost').show();
+        $('#message').hide();
+
+        if(pduip.indexOf(",")>=0)
+        {
+            pduip = pduip.split(",")[1];
+        }
+        $('#selectpduip').val(pduip);
+
+        $.ajax({
+            type: 'POST',
+            url: '../api/v1/esxi/'+esxi+'/vpduhostlist',
+            async: false ,
+            data: {'csrfmiddlewaretoken': "{{ csrf_token }}", "id": esxi, "ip": pduip},
+            dataType: 'json',
+            success: function (output) {
+                if(output.indexOf("No ESXi")>=0)
+                {
+                    $('#AddESXiHost').show();
+                    $('#DeleteESXiHost').hide();
+                    $('#message').show();
+                    $('#message').text("No ESXi host binding to this PDU, please add one firstly...");
+                }
+                else
+                {
+                    $('#AddESXiHost').hide();
+                    $('#DeleteESXiHost').show();
+                    var parsed = JSON.parse(output);
+                    $.each(parsed, function(index1, value1) {
+                        $('#bindingesxihost').val(value1[0]);
+                        var td0=document.createElement('td');
+                        td0.innerHTML=value1[1];
+
+                        var tr=document.createElement('tr');
+                        tr.appendChild(td0);
+
+                        $('#pduesxihosttable').append(tr);
+                    })
+                }
+            },
+            error: function(){
+                $('#AddESXiHost').show();
+                $('#DeleteESXiHost').hide();
+                $('#message').show();
+                $('#message').text("No ESXi host binding to this PDU, please add one firstly...");
+            }
+        });
+    }
+})
+
+$('#AddESXiHost').click(function() {
+    $('#pdubasicinfo').hide();
+    $('#pduesxihost').hide();
+    $('#addesxihosttable').show();
+    $('#message').hide();
+    $('#pduipaddress').val($('#selectpduip').val());
+})
+
+$('#ExecuteAddESXiHost').click(function() {
+    var esxi = $('#esxihost').val();
+    var selectedesxi = $('#addesxihost').val();
+    var pduip = $('#pduipaddress').val();
+    var token = $('#csrf_token').val();
+    $('#progressbar').show();
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+esxi+'/vpduhostadd',
+        async: false ,
+        data: {'csrfmiddlewaretoken': token, "id": selectedesxi, "ip": pduip},
+        dataType: 'json',
+        success: function (output) {
+            alert("Add ESXi host success.");
+            window.location.href = "esxihost";
+            $('#progressbar').hide();
+        },
+        error: function(output){
+            alert("Add ESXi host fail. Please retry...");
+            $('#progressbar').hide();
+        }
+    });
+})
+
+$('#DeleteESXiHost').click(function() {
+    var pduip = $('#selectpduip').val();
+    var token = $('#csrf_token').val();
+    var checkboxs = document.getElementsByName("esxisinglecheck");
+    var esxi = $('#bindingesxihost').val();
+    $('#progressbar').show();
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+ esxi +'/vpduhostdel',
+        data: {'csrfmiddlewaretoken': token, "id": esxi, "ip": pduip},
+        dataType: 'json',
+        success: function (output) {
+            alert("Delete ESXi host success.");
+            window.location.href = "esxihost";
+            $('#progressbar').hide();
+        },
+        error: function(output){
+            alert("Delete ESXi host fail. Please retry...");
+            $('#progressbar').hide();
+        }
+    });
+})
+
+</script>
+
+{% endblock %}

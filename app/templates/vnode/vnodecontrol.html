@@ -1,0 +1,392 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">vNode Control</h1>
+    </div>
+    <div class="row">
+        <table>
+            <tr>
+                <td>
+                    ESXi Host&nbsp;&nbsp;
+                </td>
+                <td>
+                    <select id="esxihost" name="esxihost" class="form-control" style="width: 200px">
+                        <option selected value="0">Please Select...</option>
+                        {% if esxihosts %}
+                        {% for esxihost in esxihosts %}
+                            <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </td>
+                <td>
+                    &nbsp;&nbsp;
+                </td>
+                <td>
+                    <input class="form-control" id="keyword" name="keyword" value=""/>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-default" id="Search" name="Search">Search</button>
+                </td>
+            </tr>
+        </table>
+        <p></p>
+        <p id="info" name="info">Select an ESXi host to get the VM Lists.</p>
+
+        <input id="csrf_token" name="csrf_token" type="hidden" value="{{ csrf_token }}" >
+    </div>
+
+    <div class="row" id="esxihardwareinfo" name="esxihardwareinfo" style="width: 100%; display: none;">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Core</th>
+                    <th>CPU(GHz)</th>
+                    <th>Threads</th>
+                    <th>Memory(MB)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><p id="hardwarecore" name="hardwarecore" value=""/></td>
+                    <td><p id="hardwarecpu" name="hardwarecpu" value=""/></td>
+                    <td><p id="hardwarethreads" name="hardwarethreads" value=""/></td>
+                    <td><p id="hardwarememory" name="hardwarememory" value=""/></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    <div class="row">
+        <table class="table table-striped" id="vmlist" name="vmlist">
+        </table>
+        <div id="ControlButtons" name="ControlButtons" style="display: none;" align="center">
+            <button type="button" class="btn btn-default" id="PowerOnButton" name="PowerOnButton">Power On</button>
+            <button type="button" class="btn btn-default" id="PowerOffButton" name="PowerOffButton">Power Off</button>
+            <button type="button" class="btn btn-default" id="DeleteButton" name="DeleteButton">Delete</button>
+            <button type="button" class="btn btn-default" id="ResetButton" name="ResetButton">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $('#vmlist > tbody').empty();
+
+    if(esxi=="0"){
+        $('#message').show();
+        $('#message').text("Please select an ESXi...");
+        $('#esxihardwareinfo').hide();
+        $('#vmlist').hide();
+    }
+    else{
+        $('#esxihardwareinfo').show();
+        $.ajax({
+            type: 'GET',
+            url: '../api/v1/esxi/'+esxi+'/hardware',
+            dataType: 'json',
+            data: {"id": esxi},
+            success: function (output) {
+                var parsed = JSON.parse(output);
+                $('#hardwarecore').text(parsed["cores"]);
+                $('#hardwarecpu').text((parsed["freq"]/1000000000.00).toFixed(3));
+                $('#hardwarethreads').text(parsed["threads"]);
+                $('#hardwarememory').text((parsed["memory"]/(1024*1024)).toFixed(2));
+            },
+            error: function(){
+                alert("Fail to get the ESXi hardware information.");
+            }
+        });
+    }
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        success: function (output) {
+             if(output.indexOf("failed") >= 0){
+                 $("#ControlButtons").hide();
+                 $("#info").hide()
+                 alert("Fail to get the vms information. Please check your ESXi host information!");
+            }
+            else{
+                 $("#info").hide();
+                 $("#ControlButtons").show();
+                 var allcheck = document.createElement("input");
+                 allcheck.setAttribute("type", "checkbox");
+                 allcheck.setAttribute("id", "allcheckbox");
+                 allcheck.setAttribute("name", "allcheckbox");
+                 allcheck.setAttribute("onclick", "CheckAll(this)")
+                 var td = document.createElement('td');
+                 td.appendChild(allcheck)
+                 var td0=document.createElement('td');
+                 td0.innerHTML="VM Name";
+                 var td1=document.createElement('td');
+                 td1.innerHTML="Power Status";
+                 var td2=document.createElement('td');
+                 td2.innerHTML="IP Address";
+                 var td3=document.createElement('td');
+                 td3.innerHTML="Datastore";
+                 var td4=document.createElement('td');
+                 td4.innerHTML="UUID";
+
+                 var tr=document.createElement('tr');
+                 tr.appendChild(td);
+                 tr.appendChild(td0);
+                 tr.appendChild(td1);
+                 tr.appendChild(td2);
+                 tr.appendChild(td3);
+                 tr.appendChild(td4);
+
+                 $('#vmlist').append(tr);
+                 var parsed = JSON.parse(output);
+                 $.each(parsed, function(index, value) {
+                     var checkboxvalue = value["name"]
+                     var singlecheck = document.createElement("input");
+                     singlecheck.setAttribute("type", "checkbox");
+                     singlecheck.setAttribute("id", "singlecheck");
+                     singlecheck.setAttribute("name", "singlecheck");
+                     singlecheck.setAttribute("value", checkboxvalue);
+                     var td = document.createElement('td');
+                     td.appendChild(singlecheck)
+                     var td0=document.createElement('td');
+                     td0.innerHTML=value["name"];
+                     var td1=document.createElement('td');
+                     td1.innerHTML=value["status"];
+                     var td2=document.createElement('td');
+                     td2.innerHTML=value["ip"];
+                     var td3=document.createElement('td');
+                     td3.innerHTML=value["datastore"];
+                     var td4=document.createElement('td');
+                     td4.innerHTML=value["uuid"];
+
+                     var tr=document.createElement('tr');
+                     tr.appendChild(td);
+                     tr.appendChild(td0);
+                     tr.appendChild(td1);
+                     tr.appendChild(td2);
+                     tr.appendChild(td3);
+                     tr.appendChild(td4);
+
+                     $('#vmlist').append(tr);
+                 })
+            }
+        },
+        error: function(){
+            $("#ControlButtons").hide();
+            alert("Fail to get the vms information. Please consult system admin for the permission.");
+        }
+    });
+})
+
+function CheckAll(source) {
+    var checkboxs = document.getElementsByName("singlecheck");
+    for (var i = 0, n = checkboxs.length; i < n; i++) {
+        checkboxs[i].checked = source.checked;
+    }
+}
+
+$('#PowerOnButton').click(function() {
+    var esxi = $('#esxihost').val();
+    var checkboxs = document.getElementsByName("singlecheck");
+    var okay = false;
+    successnodes = [];
+    failnodes = [];
+    for (var i = 0, n = checkboxs.length; i < n; i++)
+    {
+        if (checkboxs[i].checked)
+        {
+            var value = checkboxs[i].value;
+            $.ajax({
+                type: 'POST',
+                url: '../api/v1/esxi/'+ esxi +'/poweronvm',
+                data: {'csrfmiddlewaretoken': '{{csrf_token}}', "id": esxi, "name": value},
+                async: false,
+                dataType: 'json',
+                success: function (output) {
+                    successnodes.push(value);
+                },
+                error: function(output){
+                    failnodes.push(value);
+                }
+            });
+        }
+    }
+    alert("Power on finished.");
+    window.location.href = "../vnode/control";
+})
+
+$('#PowerOffButton').click(function() {
+   var esxi = $('#esxihost').val();
+    var checkboxs = document.getElementsByName("singlecheck");
+    var okay = false;
+    for (var i = 0, n = checkboxs.length; i < n; i++)
+    {
+        if (checkboxs[i].checked)
+        {
+            var value = checkboxs[i].value;
+            $.ajax({
+                type: 'POST',
+                url: '../api/v1/esxi/'+ esxi +'/poweroffvm',
+                data: {'csrfmiddlewaretoken': '{{csrf_token}}', "id": esxi, "name": value},
+                async: false,
+                dataType: 'json',
+                success: function (output) {
+                },
+                error: function(output){
+                }
+            });
+        }
+    }
+    alert("Power off finished.");
+    window.location.href = "../vnode/control";
+})
+
+$('#DeleteButton').click(function() {
+   var esxi = $('#esxihost').val();
+    var checkboxs = document.getElementsByName("singlecheck");
+    var okay = false;
+    for (var i = 0, n = checkboxs.length; i < n; i++)
+    {
+        if (checkboxs[i].checked)
+        {
+            var value = checkboxs[i].value;
+            $.ajax({
+                type: 'POST',
+                url: '../api/v1/esxi/'+ esxi +'/destroyvm',
+                data: {'csrfmiddlewaretoken': '{{csrf_token}}', "id": esxi, "name": value},
+                async: false,
+                dataType: 'json',
+                success: function (output) {
+                },
+                error: function(output){
+                }
+            });
+        }
+    }
+    alert("Delete nodes finished.");
+    window.location.href = "../vnode/control";
+})
+
+$('#ResetButton').click(function() {
+   var esxi = $('#esxihost').val();
+    var checkboxs = document.getElementsByName("singlecheck");
+    var okay = false;
+    for (var i = 0, n = checkboxs.length; i < n; i++)
+    {
+        if (checkboxs[i].checked)
+        {
+            var value = checkboxs[i].value;
+            $.ajax({
+                type: 'POST',
+                url: '../api/v1/esxi/'+ esxi +'/resetvm',
+                data: {'csrfmiddlewaretoken': '{{csrf_token}}', "id": esxi, "name": value},
+                async: false,
+                dataType: 'json',
+                success: function (output) {
+                },
+                error: function(output){
+                }
+            });
+        }
+    }
+    alert("Reset nodes finished.");
+    window.location.href = "../vnode/control";
+})
+
+$('#Search').click(function() {
+    var esxi = $('#esxihost').val();
+    var keyword = $('#keyword').val();
+    $('#vmlist > tbody').empty();
+
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        success: function (output) {
+             if(output.indexOf("failed") >= 0){
+                 $("#ControlButtons").hide();
+                 $("#info").hide()
+                 alert("Fail to get the vms information. Please check your ESXi host information!");
+             }
+             else{
+                 $("#info").hide();
+                 $("#ControlButtons").show();
+                 var allcheck = document.createElement("input");
+                 allcheck.setAttribute("type", "checkbox");
+                 allcheck.setAttribute("id", "allcheckbox");
+                 allcheck.setAttribute("name", "allcheckbox");
+                 allcheck.setAttribute("onclick", "CheckAll(this)")
+                 var td = document.createElement('td');
+                 td.appendChild(allcheck)
+                 var td0=document.createElement('td');
+                 td0.innerHTML="VM Name";
+                 var td1=document.createElement('td');
+                 td1.innerHTML="Power Status";
+                 var td2=document.createElement('td');
+                 td2.innerHTML="IP Address";
+                 var td3=document.createElement('td');
+                 td3.innerHTML="Datastore";
+                 var td4=document.createElement('td');
+                 td4.innerHTML="UUID";
+
+                 var tr=document.createElement('tr');
+                 tr.appendChild(td);
+                 tr.appendChild(td0);
+                 tr.appendChild(td1);
+                 tr.appendChild(td2);
+                 tr.appendChild(td3);
+                 tr.appendChild(td4);
+
+                 $('#vmlist').append(tr);
+                 var parsed = JSON.parse(output);
+                 $.each(parsed, function(index, value) {
+                     if(value["name"].indexOf(keyword)>=0)
+                     {
+                         var checkboxvalue = value["name"]
+                         var singlecheck = document.createElement("input");
+                         singlecheck.setAttribute("type", "checkbox");
+                         singlecheck.setAttribute("id", "singlecheck");
+                         singlecheck.setAttribute("name", "singlecheck");
+                         singlecheck.setAttribute("value", checkboxvalue);
+                         var td = document.createElement('td');
+                         td.appendChild(singlecheck)
+                         var td0=document.createElement('td');
+                         td0.innerHTML=value["name"];
+                         var td1=document.createElement('td');
+                         td1.innerHTML=value["status"];
+                         var td2=document.createElement('td');
+                         td2.innerHTML=value["ip"];
+                         var td3=document.createElement('td');
+                         td3.innerHTML=value["datastore"];
+                         var td4=document.createElement('td');
+                         td4.innerHTML=value["uuid"];
+
+                         var tr=document.createElement('tr');
+                         tr.appendChild(td);
+                         tr.appendChild(td0);
+                         tr.appendChild(td1);
+                         tr.appendChild(td2);
+                         tr.appendChild(td3);
+                         tr.appendChild(td4);
+
+                         $('#vmlist').append(tr);
+                     }
+                 })
+            }
+        },
+        error: function(){
+            $("#ControlButtons").hide();
+            alert("Fail to get the vms information. Please consult system admin for the permission.");
+        }
+    });
+})
+</script>
+
+{% endblock %}

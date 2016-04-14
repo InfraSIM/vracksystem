@@ -1,0 +1,108 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <h1 class="page-header">Add NIC</h1>
+    </div>
+    <div class="row" style="width: 50%">
+        <div id='progressbar' style='display:none' align="center">
+            <img src='../../static/app/img/progressbar.gif'/>
+        </div>
+        <form action="attachnic" class="crawl" method="POST" id="AttachNICForm">
+            {% csrf_token %}
+            {{ form.duration.errors }}
+            {{ form.nodeCount.errors }}
+            <p style="color: #e38d13">{{ message }}</p>
+            <table class="table table-striped table-bordered table-hover" id="AttachNICTable">
+                <tbody>
+                    <tr>
+                        <td style="width: 30%;">ESXi</td>
+                        <td style="width: 70%;">
+                            <select id="esxihost" name="esxihost" class="form-control">
+                                <option selected value="0">Please Select...</option>
+                                {% if esxihosts %}
+                                {% for esxihost in esxihosts %}
+                                    <option value="{{ esxihost.id }}">{{ esxihost.esxiIP }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 30%;">VM Name</td>
+                        <td style="width: 70%;">
+                            <select id="vmname" name="vmname" class="form-control" onchange="seleceVMName.value = this.options[this.selectedIndex].value">
+                                <option value="0">Please Select...</option>
+                            </select>
+                            <input type="hidden" name="seleceVMName" id="seleceVMName" value="0">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 30%;">Network Name</td>
+                        <td style="width: 70%;">
+                            <input name="network" id="network" value="">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td><button id="adddrivebutton" name="adddrivebutton" type="button" class="btn btn-default">Add</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript" src="../../static/app/scripts/jquery.min.js"></script>
+
+<script>
+$('#esxihost').change(function() {
+    var esxi = $('#esxihost').val()
+    $.ajax({
+        type: 'GET',
+        url: '../api/v1/esxi/'+esxi+'/getvms',
+        dataType: 'json',
+        success: function (output) {
+            if(output.indexOf("Failed") >= 0){
+                alert("Fail to get the vms information. Please check your ESXi host information!");
+            }
+            else{
+                var parsed = JSON.parse(output);
+                var $vmname = $('#vmname').empty();
+                $vmname.append('<option selected value="0">Please Select...</option>')
+                $.each(parsed, function(index, value) {
+                    var $html = '<option value="' + value["name"] + '">' + value["name"] + '</option>'
+                    $('#vmname').append($html)
+                })
+            }
+        },
+        error: function(){
+            alert("Fail to get the vms information. Please consult system admin for the permission.");
+        }
+    });
+})
+
+$('#adddrivebutton').click(function() {
+    $('#progressbar').show();
+    var id = $('#esxihost').val();
+    var vmname = $('#vmname').val();
+    var network = $('#network').val();
+    $.ajax({
+        type: 'POST',
+        url: '../api/v1/esxi/'+ id +'/addnic',
+        data: {'csrfmiddlewaretoken': '{{csrf_token}}', "id": id, "name": vmname, "network": network},
+        dataType: 'json',
+        success: function (output) {
+            $('#progressbar').hide();
+            alert("Attach NIC successfully!")
+        },
+        error: function(){
+            $('#progressbar').hide();
+            alert("Fail to attach NIC. Please check your information.");
+        }
+    });
+})
+</script>
+
+{% endblock %}

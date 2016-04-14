@@ -1,0 +1,38 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div align="center">
+        <p style="margin-top: 6%; "></p>
+        <h2>Have a Question?</h2>
+        <p style="margin-top: 3%; "></p>
+        <img src="/static/app/img/question.jpg"/>
+
+        <p style="margin-top: 18%; "></p>
+    </div>
+    <div class="row">
+        <div class="col-sm-4" align="center">
+            <a target="_blank" href="https://hardware.corp.emc.com/display/HWSIM/HW+Simulation+Home+-+IDIC">
+                <img src="/static/app/img/document.png"/>
+            </a>
+            <p style="margin-top: 1%; "></p>
+            <a target="_blank" href="http://10.62.59.209/idic/release_1.3/ReleaseNotes/index.html">Document</a>
+        </div>
+        <div class="col-sm-4" align="center">
+{#            <a target="_blank" href="https://hardware.corp.emc.com/display/HWSIM/HW+Simulation+Home+-+IDIC">#}
+{#                <img src="/static/app/img/logcollect.png"/>#}
+{#            </a>#}
+{#            <p style="margin-top: 1%; "></p>#}
+{#            <a target="_blank" href="https://hardware.corp.emc.com/display/HWSIM/HW+Simulation+Home+-+IDIC">Log Collect</a>#}
+        </div>
+        <div class="col-sm-4" align="center">
+            <a href="mailto:yuki.wu@emc.com">
+                <img src="/static/app/img/email.png"/>
+            </a>
+            <p style="margin-top: 1%; "></p>
+            <a href="mailto:yuki.wu@emc.com;mark.ma@emc.com;?Subject=vRackSystem%20Feedbacks&cc=bryan.fu@emc.com;">Email</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

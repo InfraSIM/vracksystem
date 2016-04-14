@@ -1,0 +1,9 @@
+django>=1.8.3
+pexpect
+pyvmomi
+djangorestframework
+django-rest-swagger
+django-angular
+paramiko
+ConfigObj
+terminaltables
