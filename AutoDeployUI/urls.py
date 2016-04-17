@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/datastores$', 'app.view.views.esxi_datastore', name='esxi_get_datastore'),
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/networks$', 'app.view.views.esxi_network', name='esxi_get_network'),
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/deploy$', 'app.view.views.esxi_deploy', name='esxi_deploy'),
+    url(r'^api/v1/esxi/(?P<id>[0-9]+)/changemem$', 'app.view.views.esxi_change_memory', name='esxi_change_memory'),
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/adddrive$', 'app.view.views.esxi_add_drive', name='esxi_add_drive'),
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/addnic$', 'app.view.views.esxi_add_nic', name='esxi_add_nic'),
     url(r'^api/v1/esxi/(?P<id>[0-9]+)/vpduhostlist$', 'app.view.views.esxi_vpdu_host_config_list', name='esxi_vpdu_host_config_list'),

@@ -76,6 +76,39 @@ def esxi_network(request, id, format=None):
     else:
         return Response(network, status=status.HTTP_200_OK)
 
+
+@api_view(('POST'),)
+def esxi_change_memory(request, id, format=None):
+    """
+    Change VM Memory
+    ---
+    parameters:
+       - name: name
+         description: Please input VM name
+         required: true
+         type: string
+         paramType: form
+       - name: size
+         description: Please input memory size(MB)
+         required: true
+         type: string
+         paramType: form
+    """
+    try:
+        esxi = ESXi.objects.get(id = id)
+    except ESXi.DoesNotExist:
+        content = "Cannot find the ESXi."
+        return HttpResponse(content, status = status.HTTP_404_NOT_FOUND)
+
+    usr = esxi.username
+    pwd = esxi.password
+    host = esxi.esxiIP
+
+    content = vRackBuilder.esxi_change_memory(host, usr, pwd, request.data["name"], request.data["size"])
+    if "fail" in content.lower() or "can't" in content.lower():
+        return Response("Fail to Change VM memory size, please check your VM or ESXi", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(('POST',))
 def esxi_add_drive(request, id, format=None):
     """
