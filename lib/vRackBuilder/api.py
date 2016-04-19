@@ -222,6 +222,30 @@ def esxi_destory_vm(host, usr, pwd, vm_name):
 
     return "Destory VM(%s) success!" % vm_name
 
+def esxi_change_memory(host, usr, pwd, vm_name, mem_size):
+    try:
+        si = connect.Connect(host=host, user=usr, pwd=pwd)
+        vm_view = si.content.viewManager.CreateContainerView(si.content.rootFolder, [vim.VirtualMachine], True)
+        uuid = ""
+        for vm in vm_view.view:
+            if vm.summary.config.name == vm_name:
+                uuid = vm.summary.config.instanceUuid
+                break
+        if uuid == "":
+            connect.Disconnect(si)
+            return "Can't find VM(%s)!" % vm_name
+
+        vm = si.content.searchIndex.FindByUuid(None, uuid, True, True)
+        spec = vim.vm.ConfigSpec()
+        spec.memoryMB = int(mem_size) + 512
+        task = vm.ReconfigVM_Task(spec)
+        tasks.wait_for_tasks(si, [task])
+
+        connect.Disconnect(si)
+    except Exception, e:
+        return "Change VM Memory on VM(%s) failed!" % vm_name
+    return "Change VM(%s) Memory successfully!" % vm_name
+
 def esxi_add_drive(host, usr, pwd, vm_name, disk_size):
     try:
         si = connect.Connect(host=host, user=usr, pwd=pwd)
