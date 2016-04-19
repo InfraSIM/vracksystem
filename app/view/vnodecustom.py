@@ -43,3 +43,16 @@ def addnic(request):
             'esxihosts': esxihosts,
         })
     )
+
+def changemem(request):
+    c = {}
+    c.update(csrf(request))
+    assert isinstance(request, HttpRequest)
+    return render(
+        request,
+        '../templates/vnodecustom/changemem.html',
+        context_instance = RequestContext(request,
+        {
+            'esxihosts': esxihosts,
+        })
+    )

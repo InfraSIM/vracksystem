@@ -102,6 +102,7 @@ urlpatterns = [
     # vNode Customization
     url(r'^vnodecustom/adddrive$', 'app.view.vnodecustom.adddrive', name='adddrive'),
     url(r'^vnodecustom/addnic$', 'app.view.vnodecustom.addnic', name='addnic'),
+    url(r'^vnodecustom/changemem$', 'app.view.vnodecustom.changemem', name='changemem'),
 
     # Support Page
     url(r'^support$', 'app.view.support.support', name='support'),

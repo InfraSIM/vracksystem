@@ -77,7 +77,7 @@ def esxi_network(request, id, format=None):
         return Response(network, status=status.HTTP_200_OK)
 
 
-@api_view(('POST'),)
+@api_view(('POST',))
 def esxi_change_memory(request, id, format=None):
     """
     Change VM Memory
@@ -107,6 +107,8 @@ def esxi_change_memory(request, id, format=None):
     content = vRackBuilder.esxi_change_memory(host, usr, pwd, request.data["name"], request.data["size"])
     if "fail" in content.lower() or "can't" in content.lower():
         return Response("Fail to Change VM memory size, please check your VM or ESXi", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        return Response(content, status=status.HTTP_200_OK)
 
 
 @api_view(('POST',))
