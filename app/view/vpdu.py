@@ -15,6 +15,7 @@ from django.template.context_processors import csrf
 from django.http import HttpRequest
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
+from django.contrib.auth.decorators import login_required
 
 from AutoDeployUI.models import ESXi
 
@@ -23,6 +24,7 @@ sys.path.append("../../")
 
 title = "vRackSystem"
 
+@login_required
 def getbasic(request):
     c = {}
     c.update(csrf(request))
@@ -38,6 +40,7 @@ def getbasic(request):
         })
     )
 
+@login_required
 def getesxihost(request):
     c = {}
     c.update(csrf(request))
@@ -53,6 +56,7 @@ def getesxihost(request):
         })
     )
 
+@login_required
 def getpassword(request):
     c = {}
     c.update(csrf(request))
@@ -68,6 +72,7 @@ def getpassword(request):
         })
     )
 
+@login_required
 def getmapping(request):
     c = {}
     c.update(csrf(request))
