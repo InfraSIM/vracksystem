@@ -21,9 +21,11 @@ from AutoDeployUI.models import ESXi
 
 from app.form.forms import ESXiAddForm
 from app.form.forms import ESXiEditForm
+from django.contrib.auth.decorators import login_required
 
 title = "vRack System"
 
+@login_required
 def esxi(request):
     esxiHome = ESXi.objects.all()
     assert isinstance(request, HttpRequest)
@@ -37,6 +39,7 @@ def esxi(request):
         })
     )
 
+@login_required
 def esxiadd(request):
     c = {}
     c.update(csrf(request))
@@ -77,6 +80,7 @@ def esxiadd(request):
         }
     )
 
+@login_required
 def esxiupdate(request):
     c = {}
     c.update(csrf(request))
@@ -125,6 +129,7 @@ def esxiupdate(request):
             })
         )
 
+@login_required
 def esxidelete(request):
     esxiHost = request.GET.get('esxiip')
 

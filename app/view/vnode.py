@@ -12,6 +12,7 @@ from django.shortcuts import render
 from django.template.context_processors import csrf
 from django.http import HttpRequest
 from django.template import RequestContext
+from django.contrib.auth.decorators import login_required
 
 from app.form.forms import NodeDeployForm
 
@@ -19,7 +20,7 @@ from AutoDeployUI.models import ESXi
 
 title = "vRackSystem"
 
-
+@login_required
 def uploadova(request):
     c = {}
     c.update(csrf(request))
@@ -32,6 +33,7 @@ def uploadova(request):
         }
     )
 
+@login_required
 def vnodedeploy(request):
     c = {}
     c.update(csrf(request))
@@ -49,6 +51,7 @@ def vnodedeploy(request):
         }
     )
 
+@login_required
 def vnodecontrol(request):
     c = {}
     c.update(csrf(request))

@@ -13,7 +13,9 @@ from datetime import datetime
 from django.shortcuts import render
 from django.http import HttpRequest
 from django.template import RequestContext
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def docker(request):
     assert isinstance(request, HttpRequest)
     return render(
