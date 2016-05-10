@@ -20,7 +20,7 @@ from pyVmomi import vim
 import tasks
 
 IMAGE_PATH = 'ova/'
-URL_LINK = 'https://gpsbuildfarm.corp.emc.com/view/HW_Simulation/job/HW_Simulation_%s/%s/artifact/ova_artifact/%s'
+URL_LINK = 'http://10.32.136.39:8080/view/OVA%20build/job/%s/%s/artifact/tools/ova_builder/%s'
 
 def esxi_get_datastores(host, usr, pwd):
     """ Get all datastore information of 1 ESXi. """
