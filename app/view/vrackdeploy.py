@@ -21,10 +21,9 @@ def vrackdeploy(request):
     return render(
         request,
         '../templates/vrackdeploy/vrackdeploy.html',
-        context_instance = RequestContext(request,
         {
             'message':'vRack System: vRack Deployment',
             'title':"vRackSystem",
             'year':datetime.now().year,
-        })
+        }
     )

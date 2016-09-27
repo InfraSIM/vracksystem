@@ -21,10 +21,9 @@ def kvm(request):
     return render(
         request,
         '../templates/kvm/kvm.html',
-        context_instance = RequestContext(request,
         {
             'message':'vRack System: KVM Resource',
             'title':"vRackSystem",
             'year':datetime.now().year,
-        })
+        }
     )

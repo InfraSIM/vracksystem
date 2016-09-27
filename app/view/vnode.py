@@ -61,8 +61,7 @@ def vnodecontrol(request):
     return render(
         request,
         'vnode/vnodecontrol.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )

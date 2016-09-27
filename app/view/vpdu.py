@@ -34,10 +34,9 @@ def getbasic(request):
     return render(
         request,
         'vpdu/vpdubasic.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
 
 @login_required
@@ -50,10 +49,9 @@ def getesxihost(request):
     return render(
         request,
         'vpdu/vpduesxi.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
 
 @login_required
@@ -66,10 +64,9 @@ def getpassword(request):
     return render(
         request,
         'vpdu/vpdupassword.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
 
 @login_required
@@ -82,8 +79,7 @@ def getmapping(request):
     return render(
         request,
         'vpdu/vpdumapping.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )

@@ -22,9 +22,8 @@ def support(request):
     return render(
         request,
         'app/support.html',
-        context_instance = RequestContext(request,
         {
             'title':"vRackSystem",
             'year':datetime.now().year,
-        })
+        }
     )
