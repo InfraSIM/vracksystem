@@ -17,7 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.template import RequestContext
 
-def index(request):
+def main(request):
   if request.user.is_authenticated():
     return redirect(reverse_lazy('home'))
   else:
@@ -29,11 +29,11 @@ def home(request):
     return render(
         request,
         'app/index.html',
-        context_instance = RequestContext(request,
+        context = 
         {
             'username':request.user.username,
             'message':'vRack System: Get OVA, Deploy virtual nodes, Manage virtual nodes. virtual PDU function is in development.',
             'title':"vRack System",
-            'year':datetime.now().year,
-        })
+            'year':'2016',
+        }
     )

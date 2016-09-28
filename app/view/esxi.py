@@ -32,11 +32,10 @@ def esxi(request):
     return render(
         request,
         '../templates/esxi/esxiview.html',
-        context_instance = RequestContext(request,
         {
             'title':title,
             'esxiHosts':esxiHome,
-        })
+        }
     )
 
 @login_required
@@ -119,14 +118,13 @@ def esxiupdate(request):
         return render(
             request,
             '../templates/esxi/esxiedit.html',
-            context_instance = RequestContext(request,
             {
                 'title':title,
                 'esxiIP': esxiHost,
                 'username': username,
                 'password': password,
                 'form': "",
-            })
+            }
         )
 
 @login_required
@@ -141,9 +139,8 @@ def esxidelete(request):
     return render(
         request,
         '../templates/esxi/esxiview.html',
-        context_instance = RequestContext(request,
         {
             'title':title,
             'esxiHosts':esxiHome,
-        })
+        }
     )

@@ -21,10 +21,9 @@ def docker(request):
     return render(
         request,
         '../templates/docker/docker.html',
-        context_instance = RequestContext(request,
         {
             'message':'vRack System: Docker Resource',
             'title':"vRackSystem",
             'year':datetime.now().year,
-        })
+        }
     )

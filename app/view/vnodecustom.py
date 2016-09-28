@@ -27,10 +27,9 @@ def adddrive(request):
     return render(
         request,
         '../templates/vnodecustom/adddrive.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
 
 @login_required
@@ -41,10 +40,9 @@ def addnic(request):
     return render(
         request,
         '../templates/vnodecustom/addnic.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
 
 @login_required
@@ -55,8 +53,7 @@ def changemem(request):
     return render(
         request,
         '../templates/vnodecustom/changemem.html',
-        context_instance = RequestContext(request,
         {
             'esxihosts': esxihosts,
-        })
+        }
     )
